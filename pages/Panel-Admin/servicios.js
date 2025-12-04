@@ -8,7 +8,7 @@ export default function ServiciosAdmin() {
 
   const [servicios, setServicios] = useState([]);
   
-  // Estados para Modales
+  // Estados para Modal Formulario (Crear/Editar)
   const [modalVisible, setModalVisible] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [servicioActual, setServicioActual] = useState({
@@ -18,7 +18,15 @@ export default function ServiciosAdmin() {
     duracion: ""
   });
 
-  const [mensaje, setMensaje] = useState({ texto: "", tipo: "" });
+  // ESTADOS ESTILO BARBERIA.JS (Modal Éxito y Eliminar)
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  
+  const [showModalEliminar, setShowModalEliminar] = useState(false);
+  const [idEliminar, setIdEliminar] = useState("");
+
+  // Estado para mensajes de error en el formulario
+  const [mensajeError, setMensajeError] = useState("");
 
   const cargarServicios = async () => {
     try {
@@ -34,8 +42,15 @@ export default function ServiciosAdmin() {
     cargarServicios();
   }, [backendUrl]);
 
+  // Función para mostrar éxito (Igual que en Barberos)
+  const triggerSuccess = (msg) => {
+    setSuccessMessage(msg);
+    setShowSuccess(true);
+  };
+
+  // --- LÓGICA FORMULARIO ---
   const abrirModal = (servicio = null) => {
-    setMensaje({ texto: "", tipo: "" });
+    setMensajeError("");
     if (servicio) {
       setModoEdicion(true);
       setServicioActual({
@@ -55,11 +70,11 @@ export default function ServiciosAdmin() {
     e.preventDefault();
 
     if (!servicioActual.nombre_servicio || !servicioActual.nombre_servicio.trim()) {
-      setMensaje({ texto: "El nombre del servicio es obligatorio", tipo: "error" });
+      setMensajeError("El nombre del servicio es obligatorio");
       return;
     }
     if (!servicioActual.precio) {
-      setMensaje({ texto: "El precio es obligatorio", tipo: "error" });
+      setMensajeError("El precio es obligatorio");
       return;
     }
 
@@ -87,23 +102,32 @@ export default function ServiciosAdmin() {
 
       if (res.ok) {
         cargarServicios();
-        setModalVisible(false);
-        alert(modoEdicion ? "Servicio actualizado correctamente" : "Servicio creado exitosamente");
+        setModalVisible(false); // Cierra formulario
+        // MUESTRA EL MODAL BONITO
+        triggerSuccess(modoEdicion ? "Servicio actualizado correctamente" : "Servicio creado exitosamente");
       } else {
-        setMensaje({ texto: "Error al guardar en el servidor", tipo: "error" });
+        setMensajeError("Error al guardar en el servidor");
       }
     } catch (error) {
-      setMensaje({ texto: "Error de conexión", tipo: "error" });
+      setMensajeError("Error de conexión");
     }
   };
 
-  const eliminarServicio = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar este servicio?")) return;
+  // --- LÓGICA ELIMINAR ---
+  const solicitarEliminar = (id) => {
+    setIdEliminar(id);
+    setShowModalEliminar(true);
+  };
+
+  const confirmarEliminar = async () => {
     try {
-      await fetch(`${backendUrl}/servicios/${id}`, { method: "DELETE" });
+      await fetch(`${backendUrl}/servicios/${idEliminar}`, { method: "DELETE" });
+      setShowModalEliminar(false);
+      setIdEliminar("");
       cargarServicios();
+      triggerSuccess("Servicio eliminado correctamente");
     } catch (e) {
-      console.error(e);
+      alert("Error al eliminar");
     }
   };
 
@@ -122,7 +146,7 @@ export default function ServiciosAdmin() {
             <tr>
               <th>Nombre Servicio</th>
               <th>Precio</th>
-              <th>Duración</th>
+              <th>Duración (min)</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -140,7 +164,7 @@ export default function ServiciosAdmin() {
                       <button className="btn-editar" onClick={() => abrirModal(s)} title="Editar">
                         <i className="fas fa-edit"></i>
                       </button>
-                      <button className="btn-eliminar" onClick={() => eliminarServicio(s._id)} title="Eliminar">
+                      <button className="btn-eliminar" onClick={() => solicitarEliminar(s._id)} title="Eliminar">
                         <i className="fas fa-trash"></i>
                       </button>
                     </div>
@@ -152,14 +176,15 @@ export default function ServiciosAdmin() {
         </table>
       </div>
 
+      {/* MODAL DE FORMULARIO (Crear/Editar) */}
       {modalVisible && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>{modoEdicion ? "Editar Servicio" : "Añadir Servicio"}</h3>
             
-            {mensaje.texto && (
-              <div className={`mensaje-alerta ${mensaje.tipo}`}>
-                {mensaje.texto}
+            {mensajeError && (
+              <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '10px', borderRadius: '5px', marginBottom: '15px' }}>
+                {mensajeError}
               </div>
             )}
 
@@ -206,6 +231,35 @@ export default function ServiciosAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINAR (Estilo Barbería) */}
+      {showModalEliminar && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <i className="fas fa-exclamation-triangle" style={{ fontSize: '3rem', color: '#f59e0b', marginBottom: '15px' }}></i>
+            <h3>¿Eliminar Servicio?</h3>
+            <p>Esta acción no se puede deshacer.</p>
+            <div className="modal-actions" style={{ justifyContent: 'center' }}>
+              <button className="btn-admin-action btn-gris" onClick={() => setShowModalEliminar(false)}>Cancelar</button>
+              <button className="btn-admin-action btn-rojo" onClick={confirmarEliminar}>Sí, Eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO (Estilo Barbería) */}
+      {showSuccess && (
+        <div className="modal-overlay">
+          <div className="modal-content success-modal-content">
+            <i className="fas fa-check-circle success-icon"></i>
+            <h3 className="success-title">¡Operación Exitosa!</h3>
+            <p>{successMessage}</p>
+            <button className="success-btn-close" onClick={() => setShowSuccess(false)}>
+              Cerrar
+            </button>
           </div>
         </div>
       )}
