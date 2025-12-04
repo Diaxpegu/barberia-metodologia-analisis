@@ -376,3 +376,24 @@ if __name__ == "__main__":
     import uvicorn
     PORT = int(os.environ.get("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=PORT)
+
+# --- Agregar esto en la sección de SERVICIOS en main.py ---
+
+@app.put("/servicios/{servicio_id}")
+def actualizar_servicio(servicio_id: str, data: dict = Body(...)):
+    # Convertir precio a float si viene como texto
+    if "precio" in data:
+        try:
+            data["precio"] = float(data["precio"])
+        except:
+            pass
+            
+    # Intentar actualizar
+    modificados = update_document(servicios_col, servicio_id, data)
+    
+    # Si no se modificó nada (0), verificamos si el ID existe
+    if modificados == 0:
+        if not servicios_col.find_one({"_id": ObjectId(servicio_id)}):
+             raise HTTPException(status_code=404, detail="Servicio no encontrado")
+             
+    return {"mensaje": "Servicio actualizado correctamente"}
