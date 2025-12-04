@@ -20,11 +20,10 @@ export default function Reserva() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true); // Nuevo estado de carga explícito
+  const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [availableHours, setAvailableHours] = useState({});
 
-  // ✅ URL ACTUALIZADA (La misma que usas en Reportes y Login)
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     'https://back-production-57ce.up.railway.app';
@@ -32,19 +31,35 @@ export default function Reserva() {
   // --- Carga de datos ---
   useEffect(() => {
     if (!slug) return;
-    const cargarBarbero = async () => {
+    const cargarDatos = async () => {
       setLoading(true);
       try {
-        // 1. Obtener todos los barberos
-        const res = await fetch(`${backendUrl}/barberos/`);
-        if (!res.ok) throw new Error("Error al conectar con el servidor");
-        
-        const todos = await res.json();
-        
-        // Normalización del slug para encontrar al barbero correcto
-        const crearSlug = (n) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        // 1. Cargar BARBEROS y SERVICIOS en paralelo
+        const [resBarberos, resServicios] = await Promise.all([
+            fetch(`${backendUrl}/barberos/`),
+            fetch(`${backendUrl}/servicios/`)
+        ]);
 
-        const encontrado = todos.find(b => crearSlug(b.nombre) === slug.toLowerCase());
+        if (!resBarberos.ok || !resServicios.ok) throw new Error("Error al conectar con el servidor");
+        
+        const todosBarberos = await resBarberos.json();
+        const todosServicios = await resServicios.json();
+        
+        // 2. Procesar Servicios Dinámicos (Desde la BD)
+        // Creamos un array solo con los nombres y un objeto para buscar precios rápido
+        const serviciosNombres = [];
+        const preciosObj = {};
+
+        if (Array.isArray(todosServicios)) {
+            todosServicios.forEach(s => {
+                serviciosNombres.push(s.nombre_servicio);
+                preciosObj[s.nombre_servicio] = s.precio;
+            });
+        }
+
+        // 3. Encontrar al barbero por Slug
+        const crearSlug = (n) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const encontrado = todosBarberos.find(b => crearSlug(b.nombre) === slug.toLowerCase());
         
         if (!encontrado) { 
             setError('Barbero no encontrado. Verifica la dirección URL.'); 
@@ -52,32 +67,34 @@ export default function Reserva() {
             return; 
         }
 
-        // 2. Obtener disponibilidades del barbero encontrado
+        // 4. Obtener disponibilidades del barbero encontrado
         const resHorarios = await fetch(`${backendUrl}/barberos/${encontrado._id}/disponibilidades`);
         const dataHorarios = await resHorarios.json();
         
         const formateado = {};
         if(Array.isArray(dataHorarios)) {
             dataHorarios.forEach((s) => {
-            if (!formateado[s.fecha]) formateado[s.fecha] = {};
-            formateado[s.fecha][s.hora] = s.estado;
+                if (!formateado[s.fecha]) formateado[s.fecha] = {};
+                formateado[s.fecha][s.hora] = s.estado;
             });
         }
 
+        // 5. Guardar todo en el estado (Usando los servicios de la BD)
         setPeluquero({
           ...encontrado,
           horarios: formateado,
-          servicios: ['Corte básico', 'Corte premium', 'Tintura', 'Lavado', 'Peinado'],
-          precios: { 'Corte básico': 15000, 'Corte premium': 20000, 'Tintura': 25000, 'Lavado': 5000, 'Peinado': 10000 },
+          servicios: serviciosNombres, // Ya no está hardcodeado
+          precios: preciosObj          // Precios reales de la BD
         });
+
       } catch (err) { 
           console.error(err);
-          setError('Error al cargar datos del barbero. Intenta recargar la página.'); 
+          setError('Error al cargar datos. Intenta recargar la página.'); 
       } finally {
           setLoading(false);
       }
     };
-    cargarBarbero();
+    cargarDatos();
   }, [slug, backendUrl]);
 
   useEffect(() => {
@@ -139,7 +156,7 @@ export default function Reserva() {
       email_cliente: formData.email,
       telefono_cliente: formData.telefono,
       rut_cliente: formData.rut,
-      servicio_nombre: formData.servicio,
+      servicio_nombre: formData.servicio, // Se envía el nombre exacto de la BD
     };
 
     try {
@@ -171,8 +188,7 @@ export default function Reserva() {
     }
   };
 
-  // Renderizado Condicional Mejorado
-  if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>Cargando información del barbero...</div>;
+  if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>Cargando información...</div>;
   
   if (error && !peluquero) return (
       <div style={{ padding: '50px', textAlign: 'center', color: 'red' }}>
@@ -257,11 +273,12 @@ export default function Reserva() {
                     )}
                   </div>
 
-                  {/* Servicio */}
+                  {/* Servicio (DINÁMICO) */}
                   <div className="input-group">
                     <label className="label-title"><i className="fas fa-cut"></i> Selecciona el Servicio</label>
                     <select className="modern-select" name="servicio" value={formData.servicio} onChange={handleChange}>
                       <option value="">-- Seleccionar --</option>
+                      {/* Aquí se recorren los servicios traídos de la BD */}
                       {peluquero.servicios.map(s => (
                         <option key={s} value={s}>{s} — ${peluquero.precios[s]?.toLocaleString('es-CL')}</option>
                       ))}
@@ -322,7 +339,7 @@ export default function Reserva() {
             </form>
           </section>
 
-          {/* COLUMNA DERECHA: RESUMEN */}
+          {/* COLUMNA DERECHA: RESUMEN DINÁMICO */}
           <aside className="summary-container">
             <div className="ticket">
               <div className="ticket-header">
@@ -352,6 +369,7 @@ export default function Reserva() {
 
                 <div className="ticket-total">
                   <span>TOTAL</span>
+                  {/* Calcula el total usando el precio real de la BD */}
                   <span>${peluquero.precios[formData.servicio] ? peluquero.precios[formData.servicio].toLocaleString('es-CL') : '0'}</span>
                 </div>
               </div>
