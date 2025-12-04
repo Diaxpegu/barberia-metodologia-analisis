@@ -174,7 +174,7 @@ footer {
     text-align: center;
     margin-bottom: 30px;
     padding: 2rem;
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/valiant.jpg') center/cover no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/radiant.jpg') center/cover no-repeat;
     color: white;
 }
 
@@ -2247,4 +2247,68 @@ h4 {
     .form-grid-2 {
         grid-template-columns: 1fr;
     }
+}
+/* =========================================
+   ESTILOS DE REPORTES (Panel Admin)
+   ========================================= */
+
+.reportes-header {
+    margin-bottom: 2rem;
+}
+
+.filtros-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    border-left: 4px solid var(--color-secondary);
+}
+
+.filtro-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filtro-item label {
+    font-weight: bold;
+    color: var(--color-primary);
+    font-size: 0.9rem;
+}
+
+.input-filtro {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    min-width: 200px;
+    font-size: 1rem;
+}
+
+.input-filtro:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+}
+
+/* Modificadores específicos para las tarjetas de reporte */
+.card-reporte.ingreso b {
+    color: #2e7d32; /* Verde dinero */
+}
+
+.card-reporte.servicio b {
+    color: #d81b60; /* Color distintivo */
+    font-size: 1.8rem; /* Ajuste si el nombre es largo */
+}
+
+.subtext {
+    display: block;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+    font-weight: normal;
 }
