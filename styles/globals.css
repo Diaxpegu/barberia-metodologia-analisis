@@ -2312,3 +2312,79 @@ h4 {
     margin-top: 5px;
     font-weight: normal;
 }
+
+
+/* =========================================
+   ESTILOS DE GESTIÓN DE SERVICIOS
+   ========================================= */
+
+/* Botones específicos de la tabla de servicios */
+.btn-editar {
+    background-color: #f59e0b; /* Naranja */
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-editar:hover {
+    background-color: #d97706;
+    transform: translateY(-2px);
+}
+
+.btn-eliminar {
+    background-color: #ef4444; /* Rojo */
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-eliminar:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* Inputs dentro de Modales */
+.input-modal {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-top: 5px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box; /* Evita que el padding rompa el ancho */
+}
+
+.input-modal:focus {
+    outline: none;
+    border-color: var(--color-secondary);
+    box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
+}
+
+/* Mensajes de Alerta (Validaciones) */
+.mensaje-alerta {
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    text-align: center;
+    font-weight: 500;
+}
+
+.mensaje-alerta.error {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.mensaje-alerta.exito {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
