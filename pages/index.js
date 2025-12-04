@@ -51,7 +51,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="logo-container">
         <Image
-          src="/radiant.jpg"
+          src="/radiant.png"
           alt="radiant Barber's Team"
           className="logo-img"
           width={350}
@@ -125,7 +125,7 @@ export default function Home() {
               <video
                 src="/Interior.mp4"
                 controls
-                poster="/radiant.jpg"
+                poster="/radiant.png"
                 className="full-cover-video"
               />
             </div>

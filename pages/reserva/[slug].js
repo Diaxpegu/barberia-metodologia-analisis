@@ -20,32 +20,49 @@ export default function Reserva() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Nuevo estado de carga explícito
   const [selectedDate, setSelectedDate] = useState('');
   const [availableHours, setAvailableHours] = useState({});
 
+  // ✅ URL ACTUALIZADA (La misma que usas en Reportes y Login)
   const backendUrl =
     process.env.NEXT_PUBLIC_BACKEND_URL ||
-    'https://barberia-proyecto-back-production-f876.up.railway.app';
+    'https://back-production-57ce.up.railway.app';
 
   // --- Carga de datos ---
   useEffect(() => {
     if (!slug) return;
     const cargarBarbero = async () => {
+      setLoading(true);
       try {
+        // 1. Obtener todos los barberos
         const res = await fetch(`${backendUrl}/barberos/`);
+        if (!res.ok) throw new Error("Error al conectar con el servidor");
+        
         const todos = await res.json();
+        
+        // Normalización del slug para encontrar al barbero correcto
         const crearSlug = (n) => n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
         const encontrado = todos.find(b => crearSlug(b.nombre) === slug.toLowerCase());
-        if (!encontrado) { setError('Barbero no encontrado.'); return; }
+        
+        if (!encontrado) { 
+            setError('Barbero no encontrado. Verifica la dirección URL.'); 
+            setLoading(false);
+            return; 
+        }
 
+        // 2. Obtener disponibilidades del barbero encontrado
         const resHorarios = await fetch(`${backendUrl}/barberos/${encontrado._id}/disponibilidades`);
         const dataHorarios = await resHorarios.json();
+        
         const formateado = {};
-        dataHorarios.forEach((s) => {
-          if (!formateado[s.fecha]) formateado[s.fecha] = {};
-          formateado[s.fecha][s.hora] = s.estado;
-        });
+        if(Array.isArray(dataHorarios)) {
+            dataHorarios.forEach((s) => {
+            if (!formateado[s.fecha]) formateado[s.fecha] = {};
+            formateado[s.fecha][s.hora] = s.estado;
+            });
+        }
 
         setPeluquero({
           ...encontrado,
@@ -53,7 +70,12 @@ export default function Reserva() {
           servicios: ['Corte básico', 'Corte premium', 'Tintura', 'Lavado', 'Peinado'],
           precios: { 'Corte básico': 15000, 'Corte premium': 20000, 'Tintura': 25000, 'Lavado': 5000, 'Peinado': 10000 },
         });
-      } catch (err) { setError('Error al cargar datos.'); }
+      } catch (err) { 
+          console.error(err);
+          setError('Error al cargar datos del barbero. Intenta recargar la página.'); 
+      } finally {
+          setLoading(false);
+      }
     };
     cargarBarbero();
   }, [slug, backendUrl]);
@@ -145,11 +167,20 @@ export default function Reserva() {
         },
       });
     } catch (err) {
-      setError('Error al agendar reserva.');
+      setError('Error al agendar reserva. Inténtalo de nuevo.');
     }
   };
 
-  if (!peluquero) return <div style={{ padding: '50px', textAlign: 'center' }}>Cargando...</div>;
+  // Renderizado Condicional Mejorado
+  if (loading) return <div style={{ padding: '50px', textAlign: 'center' }}>Cargando información del barbero...</div>;
+  
+  if (error && !peluquero) return (
+      <div style={{ padding: '50px', textAlign: 'center', color: 'red' }}>
+          <h3>Ocurrió un problema</h3>
+          <p>{error}</p>
+          <button onClick={() => router.push('/')} style={{marginTop: '20px', padding: '10px 20px', cursor: 'pointer'}}>Volver al Inicio</button>
+      </div>
+  );
 
   return (
     <>

@@ -174,7 +174,7 @@ footer {
     text-align: center;
     margin-bottom: 30px;
     padding: 2rem;
-    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/radiant.jpg') center/cover no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/radiant.png') center/cover no-repeat;
     color: white;
 }
 
